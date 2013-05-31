@@ -1,18 +1,18 @@
 package freenet.clients.http;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.font.FontRenderContext;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.sql.Date;
 import java.text.ParseException;
 
-import javax.imageio.ImageIO;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.Typeface;
+import android.graphics.Paint.Style;
+import android.util.Log;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.support.MultiValueTable;
@@ -57,45 +57,68 @@ public class ImageCreatorToadlet extends Toadlet {
 		if (needsGeneration) {
 			// The text that will be drawn
 			String text = req.getParam("text");
+			
 			// If width or height is specified, we use it, if not, then we use the default
 			int requiredWidth = req.getParam("width").compareTo("") != 0 ? Integer.parseInt(req.getParam("width").endsWith("px")?req.getParam("width").substring(0, req.getParam("width").length()-2):req.getParam("width")) : DEFAULT_WIDTH;
 			int requiredHeight = req.getParam("height").compareTo("") != 0 ? Integer.parseInt(req.getParam("height").endsWith("px")?req.getParam("height").substring(0, req.getParam("height").length()-2):req.getParam("height")) : DEFAULT_HEIGHT;
+			
 			// This is the image we are making
-			BufferedImage buffer = new BufferedImage(requiredWidth, requiredHeight, BufferedImage.TYPE_INT_RGB);
-			Graphics2D g2 = buffer.createGraphics();
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			FontRenderContext fc = g2.getFontRenderContext();
+			Bitmap buffer  = Bitmap.createBitmap(requiredWidth, requiredHeight, Bitmap.Config.ARGB_4444);
+			Canvas g = new Canvas(buffer);
+			Paint paint = new Paint();
+			paint.setAntiAlias(false);
+		    paint.setStrokeWidth(1);
+		    Typeface tf = Typeface.create(Typeface.DEFAULT,1);
+		    paint.setTypeface(tf);
+		    Rect bounds = new Rect();
+			
 			// We then specify the maximum font size that fits in the image
 			// For this, we start at 1, and increase it, until it overflows. This-1 will be the font size
 			float size = 1;
-			g2.setFont(g2.getFont().deriveFont(size));
+			paint.setTextSize(size);
 			int width = 0;
-			int height = 0;
+			int height = 0;	
 			while (width < requiredWidth && height < requiredHeight) {
-				Rectangle2D bounds = g2.getFont().getStringBounds(text, fc);
+				paint.getTextBounds(text, 0, text.length(), bounds);
 
 				// calculate the size of the text
-				width = (int) bounds.getWidth();
-				height = (int) bounds.getHeight();
-				g2.setFont(g2.getFont().deriveFont(++size));
+				width = (int) bounds.right-bounds.left;
+				height = (int) bounds.top-bounds.bottom;
+				Log.d("width",Integer.toString(width));
+				paint.setTextSize(++size);
 			}
-			g2.setFont(g2.getFont().deriveFont(size - 1));
-			Rectangle2D bounds = g2.getFont().getStringBounds(text, fc);
+			paint.setTextSize(size-2);
+			paint.getTextBounds(text, 0, text.length(), bounds);
+			width = (int) bounds.right-bounds.left;
+			height = (int) bounds.top-bounds.bottom;
+			
 			// actually do the drawing
-			g2.setColor(new Color(0, 0, 0));
-			g2.fillRect(0, 0, width, height);
-			g2.setColor(new Color(255, 255, 255));
-			// We position it to the center. Note that this is not the upper left corner
-			g2.drawString(text, (int) (requiredWidth / 2 - bounds.getWidth() / 2), (int) (requiredHeight / 2 + bounds.getHeight() / 4));
 
+			paint.setColor(android.graphics.Color.BLACK);
+			paint.setStyle(Style.FILL);
+			g.drawRect(bounds.left, bounds.top, bounds.right, bounds.bottom, paint);
+			
+			paint.setColor(android.graphics.Color.WHITE);
+			paint.setStyle(Style.FILL);
+
+			// We position it to the center. Note that this is not the upper left corner
+			//g2.drawString(text, (int) (requiredWidth / 2 - bounds.getWidth() / 2), (int) (requiredHeight / 2 + bounds.getHeight() / 4));
+			g.drawText(text,(float) (requiredWidth / 2 - width / 2) ,(float) (requiredHeight / 2 - height/2), paint);
 			// Write the data, and send the modification data to let the client cache it
+			
 			Bucket data = ctx.getBucketFactory().makeBucket(-1);
 			OutputStream os = data.getOutputStream();
+
 			try {
-				ImageIO.write(buffer, "png", os);
-			} finally {
-				os.close();
+				buffer.compress(Bitmap.CompressFormat.PNG,90,os);
+			} 
+			catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
 			}
+			//} finally {
+				//os.close();
+//			}
 			MultiValueTable<String, String> headers=new MultiValueTable<String, String>();
 			ctx.sendReplyHeaders(200, "OK", headers, "image/png", data.size(), LAST_MODIFIED);
 			ctx.writeData(data);
