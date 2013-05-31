@@ -298,7 +298,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				try {
 					RequestStatus[] reqs;
 					reqs = fcp.getGlobalRequests();
-                                        for(RequestStatus r : reqs) {
+                    for(RequestStatus r : reqs) {
 						if(r instanceof UploadFileRequestStatus) {
 							UploadFileRequestStatus upload = (UploadFileRequestStatus)r;
 							if(upload.hasSucceeded()) {
