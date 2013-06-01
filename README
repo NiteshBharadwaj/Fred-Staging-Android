@@ -13,3 +13,9 @@ If you are looking for Freenet source code, you can find it here: https://github
 
 Open for suggestions and comments!
  
+TESTING:
+
+I have a folder in the project above containing the 'tar'red files of test projects. Each of these .tar files contain sample code pertaining to test a particular change to the libraries and also the generated APK. These are tested to work on Galaxy Nexus i9250 mobile.
+If  anyone wants to test further you can use this code as base.
+
+Note: The APK is located in the bin folder inside the tar file
