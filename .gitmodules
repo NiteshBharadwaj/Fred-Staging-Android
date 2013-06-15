@@ -1,3 +1,6 @@
 [submodule "contrib"]
 	path = contrib
 	url = git://github.com/freenet/contrib-staging.git
+[submodule "android-staging"]
+	path = android-staging
+	url = https://github.com/NiteshBharadwaj/android-staging
