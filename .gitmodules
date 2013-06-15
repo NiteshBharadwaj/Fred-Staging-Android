@@ -4,3 +4,6 @@
 [submodule "android-staging"]
 	path = android-staging
 	url = https://github.com/NiteshBharadwaj/android-staging
+[submodule "fred-staging"]
+	path = fred-staging
+	url = https://github.com/NiteshBharadwaj/fred-staging
